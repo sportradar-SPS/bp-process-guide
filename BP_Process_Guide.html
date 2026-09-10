@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BP Process — Account Owner Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #F0F4F8; color: #1A2332; min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: #0F2940; color: white; padding: 22px 40px; display: flex; align-items: center; gap: 20px; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .header-badge { background: #E8312A; color: white; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 3px; white-space: nowrap; }
+  .header-text h1 { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+  .header-text p { font-size: 12px; color: #8FA8C2; }
+  .sr-logo { opacity: 0.9; flex-shrink: 0; }
+
+  /* PROGRESS */
+  .progress-wrap { background: #0F2940; padding: 0 40px 26px; }
+  .progress-steps { display: flex; align-items: flex-start; max-width: 760px; }
+  .prog-step { display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; flex: 1; }
+  .prog-step:not(:last-child)::after { content: ''; position: absolute; top: 18px; left: calc(50% + 20px); width: calc(100% - 40px); height: 2px; background: #1E4060; z-index: 0; transition: background 0.3s; }
+  .prog-step.completed:not(:last-child)::after { background: #2E75B6; }
+  .prog-circle { width: 36px; height: 36px; border-radius: 50%; background: #1E4060; border: 2px solid #1E4060; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #5A7A9A; transition: all 0.3s; z-index: 1; position: relative; }
+  .prog-step.active .prog-circle { background: #2E75B6; border-color: #2E75B6; color: white; box-shadow: 0 0 0 4px rgba(46,117,182,0.25); }
+  .prog-step.completed .prog-circle { background: #1B6B3A; border-color: #1B6B3A; color: white; }
+  .prog-label { font-size: 10px; color: #5A7A9A; margin-top: 6px; text-align: center; line-height: 1.3; max-width: 80px; }
+  .prog-step.active .prog-label { color: #7BAACC; }
+  .prog-step.completed .prog-label { color: #5BA87A; }
+
+  /* MAIN */
+  .main { max-width: 800px; margin: 0 auto; padding: 28px 20px; }
+
+  /* STEP CARD */
+  .step-card { background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; display: none; }
+  .step-card.active { display: block; }
+  .step-header { padding: 22px 28px 18px; border-bottom: 1px solid #EEF2F7; display: flex; align-items: center; gap: 16px; }
+  .step-num { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; color: white; flex-shrink: 0; }
+  .step-header-text h2 { font-size: 17px; font-weight: 700; color: #0F2940; }
+  .step-header-text p { font-size: 12px; color: #6B7A8D; margin-top: 3px; }
+
+  /* SUBSTEPS */
+  .substep { padding: 14px 28px; border-bottom: 1px solid #F5F7FA; display: flex; gap: 14px; align-items: flex-start; cursor: pointer; transition: background 0.15s; }
+  .substep:hover { background: #FAFBFC; }
+  .substep:last-child { border-bottom: none; }
+  .substep-icon { width: 30px; height: 30px; border-radius: 50%; background: #EEF2F7; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+  .substep-content { flex: 1; }
+  .substep-title { font-size: 14px; font-weight: 600; color: #1A2332; margin-bottom: 3px; }
+  .substep-desc { font-size: 12.5px; color: #6B7A8D; line-height: 1.5; }
+  .substep-detail { display: none; margin-top: 10px; background: #F7F9FC; border-radius: 6px; padding: 13px 15px; border-left: 3px solid #2E75B6; }
+  .substep-detail.open { display: block; }
+  .substep-detail p { font-size: 13px; color: #3A4B5C; line-height: 1.6; margin-bottom: 8px; }
+  .substep-detail p:last-child { margin-bottom: 0; }
+
+  /* EMAIL PREVIEW */
+  .email-preview { background: white; border: 1px solid #DEE5EE; border-radius: 6px; padding: 11px 13px; margin-top: 10px; font-size: 12px; }
+  .email-preview .from { color: #888; margin-bottom: 3px; }
+  .email-preview .subject { font-weight: 600; color: #1A2332; margin-bottom: 7px; font-size: 12.5px; }
+  .email-preview .body { color: #444; line-height: 1.5; }
+  .email-preview .highlight { color: #2E75B6; font-weight: 600; }
+
+  /* TAGS */
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-right: 5px; margin-bottom: 6px; }
+  .tag-auto { background: #E8F5E9; color: #1B6B3A; }
+  .tag-manual { background: #EBF3FB; color: #1A5FA8; }
+  .tag-important { background: #FFF3E0; color: #E65100; }
+
+  /* BOXES */
+  .info-box { background: #EBF3FB; border-left: 3px solid #2E75B6; border-radius: 0 6px 6px 0; padding: 11px 13px; margin-top: 10px; font-size: 12.5px; color: #1A3A5C; line-height: 1.5; }
+  .warn-box { background: #FFF8E1; border-left: 3px solid #F9A825; border-radius: 0 6px 6px 0; padding: 11px 13px; margin-top: 10px; font-size: 12.5px; color: #5D4037; line-height: 1.5; }
+  .success-box { background: #E8F5E9; border-left: 3px solid #1B6B3A; border-radius: 0 6px 6px 0; padding: 11px 13px; margin-top: 10px; font-size: 12.5px; color: #1B3A25; line-height: 1.5; }
+
+  /* BUTTON */
+  .cta-btn { display: inline-block; background: #2E75B6; color: white; font-size: 12.5px; font-weight: 600; padding: 9px 18px; border-radius: 6px; text-decoration: none; margin-top: 10px; transition: background 0.2s; }
+  .cta-btn:hover { background: #1A5FA8; }
+  .cta-btn.green { background: #1B6B3A; }
+  .cta-btn.green:hover { background: #145230; }
+  .cta-btn.teal { background: #00695C; }
+  .cta-btn.teal:hover { background: #004D40; }
+
+  /* FOOTER */
+  .step-footer { padding: 18px 28px; border-top: 1px solid #EEF2F7; display: flex; justify-content: space-between; align-items: center; background: #FAFBFC; }
+  .nav-btn { padding: 9px 20px; border-radius: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+  .nav-btn.prev { background: white; color: #6B7A8D; border: 1px solid #DEE5EE; }
+  .nav-btn.prev:hover { background: #F5F7FA; }
+  .nav-btn.next { background: #0F2940; color: white; }
+  .nav-btn.next:hover { background: #1A3A5C; }
+  .nav-btn.finish { background: #1B6B3A; color: white; }
+  .nav-btn.finish:hover { background: #145230; }
+  .step-counter { font-size: 12px; color: #9AA5B1; }
+
+  /* DONE */
+  .done-card { background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 44px 36px; text-align: center; display: none; }
+  .done-card.active { display: block; }
+  .done-icon { font-size: 52px; margin-bottom: 14px; }
+  .done-card h2 { font-size: 20px; color: #0F2940; margin-bottom: 8px; }
+  .done-card p { font-size: 13.5px; color: #6B7A8D; max-width: 480px; margin: 0 auto 22px; line-height: 1.6; }
+  .links-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; max-width: 660px; margin: 0 auto; }
+  .link-card { background: #F5F7FA; border: 1px solid #DEE5EE; border-radius: 8px; padding: 13px 14px; text-decoration: none; color: #1A2332; text-align: left; transition: all 0.2s; display: block; }
+  .link-card:hover { background: #EBF3FB; border-color: #2E75B6; }
+  .link-card .lc-label { font-size: 10px; color: #9AA5B1; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .link-card .lc-name { font-size: 12.5px; font-weight: 600; color: #1A5FA8; line-height: 1.3; }
+  .chevron { margin-left: auto; font-size: 11px; color: #9AA5B1; transition: transform 0.2s; flex-shrink: 0; padding-top: 4px; }
+  .substep.open .chevron { transform: rotate(90deg); }
+
+  /* CONTACT */
+  .contact-bar { background: #0F2940; color: #8FA8C2; font-size: 12px; text-align: center; padding: 14px 20px; margin-top: 24px; border-radius: 8px; }
+  .contact-bar a { color: #7BAACC; }
+
+  @media (max-width: 640px) {
+    .header { padding: 16px 20px; flex-wrap: wrap; }
+    .sr-logo { display: none; }
+    .progress-wrap { padding: 0 16px 22px; }
+    .main { padding: 18px 12px; }
+    .step-header { padding: 16px 18px; }
+    .substep { padding: 12px 18px; }
+    .step-footer { padding: 14px 18px; }
+    .links-grid { grid-template-columns: 1fr 1fr; }
+    .prog-label { font-size: 9px; max-width: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-badge">ACCOUNT OWNER</div>
+    <div class="header-text">
+      <h1>BP Process — Step by Step</h1>
+      <p>Follow these steps to register, complete, and get approval for your Business Plan.</p>
+    </div>
+  </div>
+  <!-- Sportradar Logo -->
+  <div class="sr-logo">
+    <img src="data:image/png;base64,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" alt="Sportradar" style="height:28px; filter: brightness(0) invert(1); opacity:0.92;">
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-steps">
+    <div class="prog-step active" id="prog-0" onclick="goTo(0)">
+      <div class="prog-circle">1</div>
+      <div class="prog-label">Benchmark Assessment</div>
+    </div>
+    <div class="prog-step" id="prog-1" onclick="goTo(1)">
+      <div class="prog-circle">2</div>
+      <div class="prog-label">Fill Your BP File</div>
+    </div>
+    <div class="prog-step" id="prog-2" onclick="goTo(2)">
+      <div class="prog-circle">3</div>
+      <div class="prog-label">Commercial Review</div>
+    </div>
+    <div class="prog-step" id="prog-3" onclick="goTo(3)">
+      <div class="prog-circle">4</div>
+      <div class="prog-label">Deal Approval Request</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ── STEP 1: BENCHMARK ASSESSMENT ── -->
+  <div class="step-card active" id="step-0">
+    <div class="step-header">
+      <div class="step-num" style="background:#0F2940">1</div>
+      <div class="step-header-text">
+        <h2>Benchmark Assessment</h2>
+        <p>When you have a new BP to register — this is where everything starts. One form launches the whole process.</p>
+      </div>
+    </div>
+    <div class="substeps">
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📋</div>
+        <div class="substep-content">
+          <div class="substep-title">Fill in the Benchmark Assessment form</div>
+          <div class="substep-desc">Takes about 5 minutes. You will need the BP name, sport, type of deal, your Sport Owner, and your approval deadline.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span></p>
+            <p>The form asks for: the Business Case name (exactly as it appears in Salesforce — no special characters like /), your Sport Owner, the sport, New Right or Prolongation, scope of rights, approval deadline, and any additional comments.</p>
+            <p>If someone else is co-owning the deal, select them as <strong>Additional Account Owner</strong> — they will receive all the same notifications as you.</p>
+            <div class="warn-box">⚠️ <strong>Use your own name as Account Owner.</strong> This ensures all notifications come to you and not to someone else.</div>
+            <div class="warn-box">⚠️ <strong>Avoid special characters in the BP name</strong> (e.g. use 2026-27, not 2026/27). Slashes and similar characters can cause errors in the file creation.</div>
+            <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=pf2dPx3VH0WjCqGeYa-5L65h3m71DolJmSOGo9EajApUREE0WlJXOVgzRzZCV0JFQ0FBU0hIQjFEWi4u" target="_blank" class="cta-btn">Open Benchmark Assessment Form →</a>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📧</div>
+        <div class="substep-content">
+          <div class="substep-title">You receive a confirmation email</div>
+          <div class="substep-desc">Within seconds, you receive an email with your BP file link and Pipeline ID. Save the Pipeline ID — you will need it later.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <div class="email-preview">
+              <div class="from">From: Sports Rights Evaluation Team</div>
+              <div class="subject">New Benchmark Assessment — [Your Business Case]</div>
+              <div class="body">
+                Your BP file has been created and is ready to complete:<br>
+                <span class="highlight">[Link to your BP file in SharePoint]</span><br><br>
+                <strong>Pipeline ID: 42</strong> — keep this, you will need it for the Commercial Review and Deal Approval Request forms.<br><br>
+                Please fill in the <strong>Account Owner tab</strong> — partnership details, deal terms, match numbers, and deal years.
+              </div>
+            </div>
+            <div class="info-box">💡 <strong>Save your Pipeline ID.</strong> It is the reference number for your BP throughout the whole process.</div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📁</div>
+        <div class="substep-content">
+          <div class="substep-title">Your BP file is created automatically in SharePoint</div>
+          <div class="substep-desc">The system creates the file in your personal SharePoint folder using the latest template. No need to create it yourself.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <p>The file is already formatted and waiting for you to fill it in. Use the link in your confirmation email to open it directly — or find it in your personal folder in SharePoint. Do not create a separate copy.</p>
+            <a href="https://sportradarag-my.sharepoint.com/shared?id=%2Fsites%2FSPSBusinessPlanning%2FShared%20Documents%2FBusiness%20Plans%2FBP%20per%20Account%20Owner&listurl=https%3A%2F%2Fsportradarag%2Esharepoint%2Ecom%2Fsites%2FSPSBusinessPlanning%2FShared%20Documents&viewid=a4da1d1b%2D67ec%2D4ce3%2D930f%2Dbfb5dca30098" target="_blank" class="cta-btn" style="margin-bottom:10px;">Open BP per Account Owner folder →</a><div class="warn-box">⚠️ <strong>Always use the file created automatically.</strong> Never create a separate copy or use an old template — the system tracks the file you were assigned.</div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">⏱️</div>
+        <div class="substep-content">
+          <div class="substep-title">What if my deadline is under 30 days?</div>
+          <div class="substep-desc">The process pauses automatically and the SRE Team contacts you to align before proceeding.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <p>If your approval deadline is less than 30 days away, you receive an alert email and the SRE Team is notified. They will reach out to decide whether to proceed with an exception.</p>
+            <p>Do not submit the Commercial Review until the SRE Team has confirmed the exception.</p>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+    </div>
+    <div class="step-footer">
+      <span class="step-counter">Step 1 of 4</span>
+      <button class="nav-btn next" onclick="goTo(1)">Next: Fill Your BP File →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: FILL YOUR BP FILE ── -->
+  <div class="step-card" id="step-1">
+    <div class="step-header">
+      <div class="step-num" style="background:#1A5FA8">2</div>
+      <div class="step-header-text">
+        <h2>Fill Your BP File</h2>
+        <p>Open the file from your confirmation email and complete your section. Then signal to Operations and your Sport Owner that they can start theirs.</p>
+      </div>
+    </div>
+    <div class="substeps">
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">✍️</div>
+        <div class="substep-content">
+          <div class="substep-title">Fill in the Account Owner tab</div>
+          <div class="substep-desc">Open the BP file using the link in your confirmation email. Complete the Account Owner tab — deal terms, match numbers, partnership details, and deal years.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span></p>
+            <p>Fill in everything in the <strong>Account Owner tab</strong>. Do not modify the other tabs — Operations and your Sport Owner will complete theirs separately.</p>
+            <div class="warn-box">💡 If the deal includes additional services (e.g. Integrity or other internal services), coordinate internally and fill in the <strong>Upstream Services tab</strong> with the relevant costs and value.</div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">✅</div>
+        <div class="substep-content">
+          <div class="substep-title">Mark AO Ready = Yes in the BP Planner</div>
+          <div class="substep-desc">Once your section is complete and context is added, set AO Ready = Yes on your BP row. This triggers the automatic notifications to Operations and your Sport Owner.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span> <span class="tag tag-important">Triggers automation</span></p>
+            <p><strong>Only set this when your Account Owner tab is fully complete.</strong> Setting AO Ready = Yes tells the system you are done and it is time for others to start their sections.</p>
+            <div class="info-box">🔔 <strong>What happens automatically:</strong> Operations (LD, LO, PMOS) and your Sport Owner each receive an email with the BP file link and instructions on what to fill in. You do not need to contact them manually.</div>
+            <a href="https://sportradarag.sharepoint.com/:x:/r/sites/SPSBusinessPlanning/_layouts/15/Doc.aspx?sourcedoc=%7B00D0388C-0E44-4837-8133-0E1E6D4870E5%7D&file=SRP%20%26%20SPS%20Business%20Cases%20Planner.xlsx&action=default&mobileredirect=true" target="_blank" class="cta-btn">Open BP Planner →</a>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">⚙️</div>
+        <div class="substep-content">
+          <div class="substep-title">Operations and Sport Owner complete their sections</div>
+          <div class="substep-desc">Both receive automatic emails with instructions and fill in their respective sections directly in the BP file.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <p><strong>Operations (LD, LO, PMOS)</strong> fill in the coverage data (match coverage for deal and no-deal scenarios) and downstream costs (venue scouting, remote scouting, technical costs).</p>
+            <p><strong>Your Sport Owner</strong> fills in the Benchmark section with sport-specific data and assessments.</p>
+            <p>Both receive the file link and instructions automatically. Once they have completed their sections, they will <strong>reply to the email they received</strong> to let you know they are done — no separate notification from the system.</p>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+    </div>
+    <div class="step-footer">
+      <button class="nav-btn prev" onclick="goTo(0)">← Back</button>
+      <span class="step-counter">Step 2 of 4</span>
+      <button class="nav-btn next" onclick="goTo(2)">Next: Commercial Review →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: COMMERCIAL REVIEW ── -->
+  <div class="step-card" id="step-2">
+    <div class="step-header">
+      <div class="step-num" style="background:#2E75B6">3</div>
+      <div class="step-header-text">
+        <h2>Commercial Review</h2>
+        <p>Once the BP file is fully complete — all sections filled by AO, Operations, and Sport Owner — submit the Commercial Review form.</p>
+      </div>
+    </div>
+    <div class="substeps">
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📝</div>
+        <div class="substep-content">
+          <div class="substep-title">Submit the Commercial Review form</div>
+          <div class="substep-desc">Use your Pipeline ID to submit. The form covers Salesforce data, deal context, and commercial and operational insights.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span></p>
+            <p>You will need your <strong>Pipeline ID</strong> (from the confirmation email after the Benchmark Assessment). The form includes: SF Partnership Name, SF Account, Term, Planned Start, Scope of Rights, Budget Status, 3YP Status, and qualitative context about the deal.</p>
+            <div class="warn-box">⚠️ <strong>Enter your Pipeline ID exactly</strong> — no spaces or modifications. A typo will cause the form to fail.</div>
+            <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=pf2dPx3VH0WjCqGeYa-5L65h3m71DolJmSOGo9EajApUMDJPTEJEQlRBMFRYRDlOM1VaWUhQQVNGQi4u" target="_blank" class="cta-btn">Open Commercial Review Form →</a>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📬</div>
+        <div class="substep-content">
+          <div class="substep-title">You receive a confirmation that the Sport Owner is reviewing</div>
+          <div class="substep-desc">After submitting, you receive an email confirming your submission is pending Sport Owner review.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <div class="email-preview">
+              <div class="from">From: Sports Rights Evaluation Team</div>
+              <div class="subject">Commercial Review Received — [Your Business Case]</div>
+              <div class="body">
+                Your Commercial Review submission has been received and is currently being reviewed by the Sport Owner.<br><br>
+                You will be notified once the review is complete.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">🔍</div>
+        <div class="substep-content">
+          <div class="substep-title">Your Sport Owner reviews it — this is mandatory</div>
+          <div class="substep-desc">The Sport Owner receives the full submission via Microsoft Teams Approvals and email. They must approve before it reaches the SRE Team.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <p>The Sport Owner approves or rejects via the <strong>Microsoft Teams Approvals app</strong> and <strong>via email</strong>. If they reject, you receive an email with their feedback and you can correct and resubmit.</p>
+            <p>Once the SO approves, the SRE Team receives the full Commercial Review details automatically.</p>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📊</div>
+        <div class="substep-content">
+          <div class="substep-title">You are notified that your BP is being reviewed by Pricing/GTM</div>
+          <div class="substep-desc">Once your BP is included in the Thursday email to Pricing/GTM, you and your Sport Owner receive a notification that the commercial evaluation is underway.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <div class="email-preview">
+              <div class="from">From: Sports Rights Evaluation Team</div>
+              <div class="subject">BP Under Review — [Your Business Case]</div>
+              <div class="body">
+                Your Business Plan is currently being reviewed by Pricing/GTM for commercial evaluation.<br><br>
+                No action required — you will be notified once a decision has been made.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">🎯</div>
+        <div class="substep-content">
+          <div class="substep-title">You receive approval notification + link to next step</div>
+          <div class="substep-desc">Once Pricing/GTM approves the BP, you receive an email with the Deal Approval Request form link and your Pipeline ID.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <div class="email-preview">
+              <div class="from">From: Sports Rights Evaluation Team</div>
+              <div class="subject">BP Approved — [Your Business Case]</div>
+              <div class="body">
+                The Commercial Review of your BP has been finalized.<br><br>
+                The next step is to submit the <strong>Deal Approval Request</strong>. Please align with your Sport Owner before submitting.<br><br>
+                <span class="highlight">[Link to Deal Approval Request Form]</span><br><br>
+                Your Pipeline ID: <strong>42</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+    </div>
+    <div class="step-footer">
+      <button class="nav-btn prev" onclick="goTo(1)">← Back</button>
+      <span class="step-counter">Step 3 of 4</span>
+      <button class="nav-btn next" onclick="goTo(3)">Next: Deal Approval Request →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: DEAL APPROVAL REQUEST ── -->
+  <div class="step-card" id="step-3">
+    <div class="step-header">
+      <div class="step-num" style="background:#00695C">4</div>
+      <div class="step-header-text">
+        <h2>Deal Approval Request</h2>
+        <p>The final step. Once submitted and approved by the Sport Owner, the full deal rationale goes automatically to all relevant stakeholders.</p>
+      </div>
+    </div>
+    <div class="substeps">
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">🤝</div>
+        <div class="substep-content">
+          <div class="substep-title">Align with your Sport Owner before submitting</div>
+          <div class="substep-desc">Before filling in the form, align with your Sport Owner on the deal rationale. They will need to review and approve it before it goes to stakeholders.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span></p>
+            <p>Aligning with the SO before submitting avoids back-and-forth and ensures the submission is solid. The SO will receive the full form content via Teams Approvals once you submit.</p>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📝</div>
+        <div class="substep-content">
+          <div class="substep-title">Submit the Deal Approval Request form</div>
+          <div class="substep-desc">The form covers the full deal rationale — same content as the DAR email you used to write manually, but now structured and standardized.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span></p>
+            <p>You will need your <strong>Pipeline ID</strong>. The form has 6 sections:</p>
+            <p>① Executive Summary — why we recommend this deal<br>
+            ② Sports Portfolio Plan Impact — key risks, opportunities, competitive implications<br>
+            ③ Commercial View — sales categorization, forecasted impact, revisions vs Benchmark<br>
+            ④ AV/DATA Impact — venue coverage, stream speed, operational implications<br>
+            ⑤ Partnership Overview — current rights holder, competitors, viable alternatives<br>
+            ⑥ Embeddedness & Bundled Services — standalone or bundled, additional products</p>
+            <div class="info-box">💡 The link to this form arrives automatically in your approval notification email. You can also access it here:</div>
+            <a href="https://forms.cloud.microsoft/e/z5c8tw7k3F" target="_blank" class="cta-btn teal">Open Deal Approval Request Form →</a>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">📬</div>
+        <div class="substep-content">
+          <div class="substep-title">You receive confirmation — Sport Owner is reviewing</div>
+          <div class="substep-desc">After submitting, you receive an email confirming your DAR is pending Sport Owner review before going to stakeholders.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <div class="email-preview">
+              <div class="from">From: Sports Rights Evaluation Team</div>
+              <div class="subject">Deal Approval Request Received — [Your Business Case]</div>
+              <div class="body">
+                Your Deal Approval Request has been successfully submitted.<br><br>
+                The Sport Owner will review your submission before it is sent to stakeholders. You will be notified once the review is complete.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">🚀</div>
+        <div class="substep-content">
+          <div class="substep-title">Once approved — sent automatically to all stakeholders</div>
+          <div class="substep-desc">Once the Sport Owner approves via Teams, the full deal rationale goes automatically to Tristan, FP&A, Media, Go-to-market, ROO, and all relevant stakeholders.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-auto">Automatic</span></p>
+            <p>You do not need to send any emails manually. The system sends the full deal rationale email — with your executive summary, commercial view, and link to the BP file — to all relevant stakeholders simultaneously.</p>
+            <div class="success-box">🎉 <strong>You are done.</strong> The SRE Team monitors the TC and CRC approval process from here. You will be kept informed of next steps.</div>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+      <div class="substep" onclick="toggle(this)">
+        <div class="substep-icon">🔄</div>
+        <div class="substep-content">
+          <div class="substep-title">What if the deal scope changes mid-process?</div>
+          <div class="substep-desc">If the scope or financials change at any point, you can create a new version of the BP file without starting from scratch using the BP Amendment form.</div>
+          <div class="substep-detail">
+            <p><span class="tag tag-manual">You do this</span> <span class="tag tag-important">Triggers automation</span></p>
+            <p>Submit the <strong>BP Amendment form</strong> with your Pipeline ID, the new BP name, and a brief description of what changed. The system copies your existing file automatically and creates a new version — up to 3 versions (v1, v2, v3) can coexist in SharePoint.</p>
+            <p>The SRE Team is notified automatically and decides if the evaluation stage needs to be adjusted. All subsequent emails will use the new version link.</p>
+            <div class="warn-box">⚠️ <strong>Never modify the original BP file directly.</strong> Always use the BP Amendment form to create a new version — this keeps the history clean and the process tracking intact.</div>
+            <a href="https://forms.cloud.microsoft/e/SamhWkgtjN" target="_blank" class="cta-btn">Open BP Amendment Form →</a>
+          </div>
+        </div>
+        <div class="chevron">▶</div>
+      </div>
+
+    </div>
+    <div class="step-footer">
+      <button class="nav-btn prev" onclick="goTo(2)">← Back</button>
+      <span class="step-counter">Step 4 of 4</span>
+      <button class="nav-btn finish" onclick="goTo(4)">✓ Done — See All Links</button>
+    </div>
+  </div>
+
+  <!-- ── DONE ── -->
+  <div class="done-card" id="step-4">
+    <div class="done-icon">🎯</div>
+    <h2>You have everything you need</h2>
+    <p>Bookmark this page or save the links below. Any questions — reach out to the SRE Team directly.</p>
+    <div class="links-grid">
+      <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=pf2dPx3VH0WjCqGeYa-5L65h3m71DolJmSOGo9EajApUREE0WlJXOVgzRzZCV0JFQ0FBU0hIQjFEWi4u" target="_blank" class="link-card">
+        <div class="lc-label">STEP 1</div>
+        <div class="lc-name">Benchmark Assessment Form</div>
+      </a>
+      <a href="https://sportradarag.sharepoint.com/:x:/r/sites/SPSBusinessPlanning/_layouts/15/Doc.aspx?sourcedoc=%7B00D0388C-0E44-4837-8133-0E1E6D4870E5%7D&file=SRP%20%26%20SPS%20Business%20Cases%20Planner.xlsx&action=default&mobileredirect=true" target="_blank" class="link-card">
+        <div class="lc-label">STEP 2</div>
+        <div class="lc-name">BP Planner (AO Ready = Yes)</div>
+      </a>
+      <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=pf2dPx3VH0WjCqGeYa-5L65h3m71DolJmSOGo9EajApUMDJPTEJEQlRBMFRYRDlOM1VaWUhQQVNGQi4u" target="_blank" class="link-card">
+        <div class="lc-label">STEP 3</div>
+        <div class="lc-name">Commercial Review Form</div>
+      </a>
+      <a href="https://forms.cloud.microsoft/e/z5c8tw7k3F" target="_blank" class="link-card">
+        <div class="lc-label">STEP 4</div>
+        <div class="lc-name">Deal Approval Request Form</div>
+      </a>
+      <a href="https://forms.cloud.microsoft/e/SamhWkgtjN" target="_blank" class="link-card">
+        <div class="lc-label">IF SCOPE CHANGES</div>
+        <div class="lc-name">BP Amendment Form</div>
+      </a>
+      <a href="https://sportradarag.sharepoint.com/sites/SPSBusinessPlanning/Shared%20Documents/Business%20Plans/BP%20per%20Account%20Owner" target="_blank" class="link-card">
+        <div class="lc-label">YOUR FILES</div>
+        <div class="lc-name">BP per Account Owner (SharePoint)</div>
+      </a>
+    </div>
+    <div style="margin-top:24px;">
+      <button class="nav-btn prev" onclick="goTo(0)">← Start over</button>
+    </div>
+  </div>
+
+  <!-- CONTACT BAR -->
+  <div class="contact-bar">
+    Questions about the process? Contact the SRE Team — <a href="mailto:s.zanko@sportradar.com">s.zanko@sportradar.com</a> · <a href="mailto:y.sundar@sportradar.com">y.sundar@sportradar.com</a> · <a href="mailto:j.villamarin@sportradar.com">j.villamarin@sportradar.com</a>
+  </div>
+
+</div>
+
+<script>
+  let current = 0;
+  const total = 4;
+
+  function goTo(n) {
+    document.getElementById('step-' + current)?.classList.remove('active');
+    if (current < total) document.getElementById('prog-' + current)?.classList.remove('active');
+
+    for (let i = 0; i < n && i < total; i++) {
+      const p = document.getElementById('prog-' + i);
+      if (p) { p.classList.remove('active'); p.classList.add('completed'); }
+      const c = p?.querySelector('.prog-circle');
+      if (c) c.textContent = '✓';
+    }
+    for (let i = n; i < total; i++) {
+      const p = document.getElementById('prog-' + i);
+      if (p) { p.classList.remove('active', 'completed'); }
+      const c = p?.querySelector('.prog-circle');
+      if (c) c.textContent = i + 1;
+    }
+
+    current = n;
+    document.getElementById('step-' + n)?.classList.add('active');
+    if (n < total) document.getElementById('prog-' + n)?.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggle(el) {
+    const detail = el.querySelector('.substep-detail');
+    const isOpen = detail.classList.contains('open');
+    el.parentElement.querySelectorAll('.substep-detail.open').forEach(d => d.classList.remove('open'));
+    el.parentElement.querySelectorAll('.substep.open').forEach(s => s.classList.remove('open'));
+    if (!isOpen) { detail.classList.add('open'); el.classList.add('open'); }
+  }
+</script>
+</body>
+</html>
