@@ -153,12 +153,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#1A2332;mi
 }
 @media(max-width:540px){
   .shell.on{flex-direction:column}
-  .sb{width:100%;max-height:160px}
+  .sb{width:100%;max-height:none;flex-shrink:0}
+  .sb-top{display:none}
   .sb-nav{display:flex;overflow-x:auto;padding:6px 8px}
   .ni{flex-direction:column;gap:3px;padding:7px 10px;min-width:70px;border-left:none;border-bottom:3px solid transparent;text-align:center}
   .ni.active{border-left:none;border-bottom-color:#E8312A}
   .ni-label{font-size:9px}
-  .sb-foot{display:none}
+  .sb-foot{display:block;padding:7px 10px}
+  .change-btn{padding:7px 10px;font-size:11px}
 }
 </style>
 </head>
